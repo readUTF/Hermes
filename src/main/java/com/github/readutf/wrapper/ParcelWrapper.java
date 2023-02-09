@@ -12,6 +12,7 @@ import java.util.UUID;
 @Getter @Setter @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
 public class ParcelWrapper {
 
+    String subChannel;
     UUID parcelId;
     Object data;
 

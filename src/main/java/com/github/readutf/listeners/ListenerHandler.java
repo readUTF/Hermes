@@ -97,7 +97,6 @@ public class ListenerHandler {
         logger.debug("Found " + methods.size() + " handlers in " + instance.getClass().getSimpleName());
         for (Method method : methods) {
             String channel = method.getAnnotation(ChannelListener.class).value();
-            hermes.registerChannel(channel);
             List<Method> methods1 = channelListeners.getOrDefault(channel, new ArrayList<>());
             methods1.add(method);
             channelListeners.put(channel, methods1);
