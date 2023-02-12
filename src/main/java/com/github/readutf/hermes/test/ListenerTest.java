@@ -1,8 +1,8 @@
-package com.github.readutf.test;
+package com.github.readutf.hermes.test;
 
-import com.github.readutf.Hermes;
-import com.github.readutf.listeners.ChannelListener;
-import com.github.readutf.wrapper.ParcelResponse;
+import com.github.readutf.hermes.Hermes;
+import com.github.readutf.hermes.listeners.ChannelListener;
+import com.github.readutf.hermes.wrapper.ParcelResponse;
 import com.readutf.uls.Logger;
 
 import java.util.HashMap;

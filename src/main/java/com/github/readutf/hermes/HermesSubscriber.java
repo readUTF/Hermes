@@ -1,9 +1,9 @@
-package com.github.readutf;
+package com.github.readutf.hermes;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.readutf.wrapper.ParcelResponse;
-import com.github.readutf.wrapper.ParcelWrapper;
+import com.github.readutf.hermes.wrapper.ParcelResponse;
+import com.github.readutf.hermes.wrapper.ParcelWrapper;
 import com.readutf.uls.Logger;
 import redis.clients.jedis.JedisPubSub;
 

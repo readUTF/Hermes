@@ -1,6 +1,6 @@
-package com.github.readutf.utils;
+package com.github.readutf.hermes.utils;
 
-import com.github.readutf.Hermes;
+import com.github.readutf.hermes.Hermes;
 import com.readutf.uls.Logger;
 import lombok.Getter;
 import lombok.SneakyThrows;

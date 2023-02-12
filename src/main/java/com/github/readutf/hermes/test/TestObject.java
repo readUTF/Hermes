@@ -1,4 +1,4 @@
-package com.github.readutf.test;
+package com.github.readutf.hermes.test;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,8 +1,8 @@
-package com.github.readutf.wrapper;
+package com.github.readutf.hermes.wrapper;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.github.readutf.Hermes;
+import com.github.readutf.hermes.Hermes;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

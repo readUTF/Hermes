@@ -1,4 +1,4 @@
-package com.github.readutf.wrapper;
+package com.github.readutf.hermes.wrapper;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.AllArgsConstructor;

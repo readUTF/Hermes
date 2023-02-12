@@ -1,8 +1,4 @@
-package com.github.readutf.test;
-
-import com.github.readutf.Hermes;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
+package com.github.readutf.hermes.test;
 
 public class ReceiverTest {
 
