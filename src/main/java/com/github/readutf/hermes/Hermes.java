@@ -28,8 +28,7 @@ public class Hermes {
     private @Getter
     static Hermes instance;
     private @Getter
-    @Setter
-    static LoggerFactory loggerFactory = new LoggerFactory("Hermes").setDebugAll(true);
+    @Setter LoggerFactory loggerFactory;
 
     private final Logger logger;
     private final JedisPool jedisPool;
@@ -50,9 +49,10 @@ public class Hermes {
 
     String channel;
 
-    public Hermes(String channelName, JedisPool jedisPool, ObjectMapper objectMapper, ClassLoader classLoader) {
+    private Hermes(String channelName, LoggerFactory loggerFactory, JedisPool jedisPool, ObjectMapper objectMapper, ClassLoader classLoader) {
         instance = this;
         this.channel = channelName;
+        this.loggerFactory = loggerFactory;
 
         new Thread(() -> {
             try {
@@ -71,10 +71,6 @@ public class Hermes {
         this.parcelConsumerMap = new HashMap<>();
         this.threadPool = Executors.newCachedThreadPool();
         this.listenerHandler = new ListenerHandler(this, classLoader);
-    }
-
-    public Hermes(String channelName, JedisPool jedisPool) {
-        this(channelName, jedisPool, new ObjectMapper(), Hermes.class.getClassLoader());
     }
 
     public void registerResponseReceiver(String channel, Consumer<ParcelResponse> responseConsumer) {
@@ -124,5 +120,45 @@ public class Hermes {
         running = false;
     }
 
+    public static class Builder {
+
+        private String channel;
+        private LoggerFactory loggerFactory = new LoggerFactory("Hermes");
+        private JedisPool jedisPool;
+        private ObjectMapper objectMapper = new ObjectMapper();
+        private ClassLoader classLoader = Hermes.class.getClassLoader();
+
+        public Hermes build() {
+            if(channel == null) throw new RuntimeException("Channel cannot be null");
+            if(jedisPool == null) throw new RuntimeException("JedisPool cannot be null");
+            return new Hermes(channel, loggerFactory, jedisPool, objectMapper, classLoader);
+        }
+
+        public Builder channel(String channel) {
+            this.channel = channel;
+            return this;
+        }
+
+        public Builder loggerFactory(LoggerFactory loggerFactory) {
+            this.loggerFactory = loggerFactory;
+            return this;
+        }
+
+        public Builder jedisPool(JedisPool jedisPool) {
+            this.jedisPool = jedisPool;
+            return this;
+        }
+
+        public Builder objectMapper(ObjectMapper objectMapper) {
+            this.objectMapper = objectMapper;
+            return this;
+        }
+
+        public Builder classLoader(ClassLoader classLoader) {
+            this.classLoader = classLoader;
+            return this;
+        }
+
+    }
 
 }

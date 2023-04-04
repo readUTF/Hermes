@@ -2,6 +2,7 @@ package com.github.readutf.hermes.utils;
 
 import com.github.readutf.hermes.Hermes;
 import com.readutf.uls.Logger;
+import com.readutf.uls.LoggerFactory;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import redis.clients.jedis.Jedis;
@@ -13,13 +14,12 @@ import java.util.function.Function;
 
 public class JedisQuick {
 
-
-    private static Logger logger = Hermes.getLoggerFactory().getLogger(JedisQuick.class);
-
-    @Getter JedisPool pool;
+    private @Getter JedisPool pool;
+    private final Logger logger;
 
     public JedisQuick(JedisPool jedisPool) {
         this.pool = jedisPool;
+        this.logger = Hermes.getInstance().getLoggerFactory().getLogger(JedisQuick.class);
     }
 
     public void set(String key, String value) {
@@ -37,7 +37,9 @@ public class JedisQuick {
         try {
             Jedis jedis = getPool().borrowObject();
             handleDebug("exists");
-            return jedis.exists(key);
+            boolean result = jedis.exists(key);
+            getPool().returnObject(jedis);
+            return result;
         } catch (Exception e) {
             e.printStackTrace();
             return false;

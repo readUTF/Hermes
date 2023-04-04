@@ -19,12 +19,12 @@ public class HermesSubscriber extends JedisPubSub {
 
     ExecutorService threadPool = Executors.newCachedThreadPool();
 
-    private static Logger logger = Hermes.getLoggerFactory().getLogger(HermesSubscriber.class);
-
-    Hermes hermes;
+    private final Hermes hermes;
+    private final Logger logger;
 
     public HermesSubscriber(Hermes hermes) {
         this.hermes = hermes;
+        this.logger = hermes.getLoggerFactory().getLogger(getClass());
     }
 
     @Override
@@ -35,7 +35,6 @@ public class HermesSubscriber extends JedisPubSub {
 
     @Override
     public void onMessage(String channel, String message) {
-        ;
 
         logger.debug("Received parcel data");
         threadPool.submit(() -> {
