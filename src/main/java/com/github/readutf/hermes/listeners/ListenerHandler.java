@@ -50,7 +50,7 @@ public class ListenerHandler {
         if(methods == null || methods.isEmpty()) return;
 
 
-        for (Method method : methods) {
+        for (Method method : new ArrayList<>(methods)) {
             Logger logger1 = hermes.getLoggerFactory().getLogger(method.getDeclaringClass());
 
             Object instance = objectInstances.get(method.getDeclaringClass());
