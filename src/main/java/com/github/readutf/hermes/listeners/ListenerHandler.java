@@ -10,10 +10,7 @@ import lombok.SneakyThrows;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,7 +37,7 @@ public class ListenerHandler {
 
     @SneakyThrows
     public void handleParcel(String channel, ParcelWrapper wrapper) {
-        List<Method> methods = channelListeners.getOrDefault(channel, new ArrayList<>());
+        HashSet<Method> methods = new HashSet<>(channelListeners.getOrDefault(channel, new ArrayList<>()));
         for (String s : channelListeners.keySet()) {
             if(isMatch(channel, s)) {
                 methods.addAll(channelListeners.get(s));
