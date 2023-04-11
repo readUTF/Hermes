@@ -13,7 +13,6 @@ import java.util.UUID;
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class") @Getter @NoArgsConstructor @Setter
 public class ParcelResponse {
 
-    private String channel;
     private UUID parcelId;
 
     private HashMap<String, Object> data;

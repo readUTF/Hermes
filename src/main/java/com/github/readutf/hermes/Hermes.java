@@ -42,20 +42,15 @@ public class Hermes {
     private final HashMap<String, List<Function<ParcelWrapper, ParcelResponse>>> parcelConsumerMap;
     private final HashMap<String, TypeReference<?>> typeAdapters = new HashMap<>();
 
-    private final HashMap<String, Runnable> awaitingSubscribe = new HashMap<>();
-
-    String channel;
-
     @SneakyThrows
-    private Hermes(String channelName, LoggerFactory loggerFactory, JedisPool jedisPool, ObjectMapper objectMapper, ClassLoader classLoader) {
+    private Hermes(LoggerFactory loggerFactory, JedisPool jedisPool, ObjectMapper objectMapper, ClassLoader classLoader) {
         instance = this;
-        this.channel = channelName;
         this.loggerFactory = loggerFactory;
 
         new Thread(() -> {
             try {
                 Jedis jedis = jedisPool.borrowObject();
-                jedis.subscribe(pubSub = new HermesSubscriber(this), channelName);
+                jedis.psubscribe(pubSub = new HermesSubscriber(this), "*");
                 jedisPool.returnObject(jedis);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -82,9 +77,9 @@ public class Hermes {
     }
 
     @SneakyThrows
-    public void sendParcel(String subChannel, Object object, Consumer<ParcelResponse> responseConsumer) {
+    public void sendParcel(String channel, Object object, Consumer<ParcelResponse> responseConsumer) {
         UUID parcelId = UUID.randomUUID();
-        String message = objectMapper.writeValueAsString(new ParcelWrapper(subChannel, parcelId, object));
+        String message = objectMapper.writeValueAsString(new ParcelWrapper(channel, parcelId, object));
         message = Base64.getEncoder().encodeToString(message.getBytes());
         try {
             publisher.publish(channel, message);
@@ -101,9 +96,8 @@ public class Hermes {
         sendParcel(channel, object, null);
     }
 
-    public void sendResponse(String subChannel, UUID parcelId, ParcelResponse parcelResponse) {
+    public void sendResponse(String channel, UUID parcelId, ParcelResponse parcelResponse) {
         try {
-            parcelResponse.setChannel(channel);
             parcelResponse.setParcelId(parcelId);
             publisher.publish(channel, Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(parcelResponse).getBytes()));
         } catch (Exception e) {
@@ -126,21 +120,14 @@ public class Hermes {
 
     public static class Builder {
 
-        private String channel;
         private LoggerFactory loggerFactory = new LoggerFactory("Hermes");
         private JedisPool jedisPool;
         private ObjectMapper objectMapper = new ObjectMapper();
         private ClassLoader classLoader = Hermes.class.getClassLoader();
 
         public Hermes build() {
-            if(channel == null) throw new RuntimeException("Channel cannot be null");
             if(jedisPool == null) throw new RuntimeException("JedisPool cannot be null");
-            return new Hermes(channel, loggerFactory, jedisPool, objectMapper, classLoader);
-        }
-
-        public Builder channel(String channel) {
-            this.channel = channel;
-            return this;
+            return new Hermes(loggerFactory, jedisPool, objectMapper, classLoader);
         }
 
         public Builder loggerFactory(LoggerFactory loggerFactory) {

@@ -31,11 +31,10 @@ public class HermesSubscriber extends JedisPubSub {
     @Override
     public void onSubscribe(String channel, int subscribedChannels) {
         System.out.println("Channel " + channel + " registered.");
-        Optional.ofNullable(hermes.getAwaitingSubscribe().get(channel)).ifPresent(Runnable::run);
     }
 
     @Override
-    public void onMessage(String channel, String message) {
+    public void onPMessage(String pattern, String channel, String message) {
         String messageDecoded = new String(Base64.getDecoder().decode(message));
 
         logger.debug("Received parcel data");
@@ -45,25 +44,23 @@ public class HermesSubscriber extends JedisPubSub {
                 HashMap<String, Object> jsonNode = objectMapper.readValue(messageDecoded, new TypeReference<HashMap<String, Object>>() {});
                 String type = (String) jsonNode.get("@class");
 
-                String subChannel = (String) jsonNode.get("subChannel");
-
                 if (type.contains("ParcelWrapper")) {
                     logger.debug("Processing ParcelWrapper");
 
                     ParcelWrapper parcelWrapper = objectMapper.convertValue(jsonNode, ParcelWrapper.class);
                     try {
-                        hermes.getListenerHandler().handleParcel(subChannel, parcelWrapper);
+                        hermes.getListenerHandler().handleParcel(channel, parcelWrapper);
                     } catch (Exception e) {
                         e.printStackTrace();
                         logger.debug("Failed to handle parcel");
                         return;
                     }
-                    List<Function<ParcelWrapper, ParcelResponse>> functions = hermes.getParcelConsumerMap().get(subChannel);
+                    List<Function<ParcelWrapper, ParcelResponse>> functions = hermes.getParcelConsumerMap().get(channel);
                     if (functions == null) return;
 
                     for (Function<ParcelWrapper, ParcelResponse> function : functions) {
                         ParcelResponse parcelResponse = function.apply(parcelWrapper);
-                        hermes.sendResponse(subChannel, parcelWrapper.getParcelId(), parcelResponse);
+                        hermes.sendResponse(channel, parcelWrapper.getParcelId(), parcelResponse);
                     }
                 } else if (type.contains("ParcelResponse")) {
                     ParcelResponse parcelResponse = objectMapper.convertValue(jsonNode, ParcelResponse.class);
