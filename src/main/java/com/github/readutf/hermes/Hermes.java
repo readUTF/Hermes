@@ -3,6 +3,7 @@ package com.github.readutf.hermes;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.readutf.hermes.listeners.ListenerHandler;
+import com.github.readutf.hermes.serialization.SerializationManager;
 import com.github.readutf.hermes.wrapper.ParcelResponse;
 import com.github.readutf.hermes.wrapper.ParcelWrapper;
 import com.readutf.uls.Logger;
@@ -33,13 +34,13 @@ public class Hermes {
     private final ObjectMapper objectMapper;
     private final ExecutorService threadPool;
     private final ListenerHandler listenerHandler;
+    private final SerializationManager serializationManager;
 
     private HermesSubscriber pubSub;
 
     boolean running = true;
 
     private final HashMap<UUID, Consumer<ParcelResponse>> responseConsumerMap;
-    private final HashMap<String, List<Function<ParcelWrapper, ParcelResponse>>> parcelConsumerMap;
     private final HashMap<String, TypeReference<?>> typeAdapters = new HashMap<>();
 
     @SneakyThrows
@@ -60,21 +61,12 @@ public class Hermes {
         this.logger = loggerFactory.getLogger(getClass());
         this.objectMapper = objectMapper;
         this.publisher = jedisPool.getResource();
+        this.serializationManager = new SerializationManager();
         this.responseConsumerMap = new HashMap<>();
-        this.parcelConsumerMap = new HashMap<>();
         this.threadPool = Executors.newCachedThreadPool();
         this.listenerHandler = new ListenerHandler(this, classLoader);
     }
 
-    public void registerResponseReceiver(String channel, Consumer<ParcelResponse> responseConsumer) {
-        responseConsumerMap.put(UUID.randomUUID(), responseConsumer);
-    }
-
-    public void registerReceiver(String channel, Function<ParcelWrapper, ParcelResponse> parcelConsumer) {
-        List<Function<ParcelWrapper, ParcelResponse>> consumers = parcelConsumerMap.getOrDefault(channel, new ArrayList<>());
-        consumers.add(parcelConsumer);
-        parcelConsumerMap.put(channel, consumers);
-    }
 
     @SneakyThrows
     public void sendParcel(String channel, Object object, Consumer<ParcelResponse> responseConsumer) {

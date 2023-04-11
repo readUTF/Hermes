@@ -2,6 +2,8 @@ package com.github.readutf.hermes;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.readutf.hermes.serialization.SerializationManager;
+import com.github.readutf.hermes.serialization.StringSerializer;
 import com.github.readutf.hermes.wrapper.ParcelResponse;
 import com.github.readutf.hermes.wrapper.ParcelWrapper;
 import com.readutf.uls.Logger;
@@ -22,10 +24,12 @@ public class HermesSubscriber extends JedisPubSub {
 
     private final Hermes hermes;
     private final Logger logger;
+    private final SerializationManager serializationManager;
 
     public HermesSubscriber(Hermes hermes) {
         this.hermes = hermes;
         this.logger = hermes.getLoggerFactory().getLogger(getClass());
+        this.serializationManager = hermes.getSerializationManager();
     }
 
     @Override
@@ -33,9 +37,16 @@ public class HermesSubscriber extends JedisPubSub {
         System.out.println("Channel " + channel + " registered.");
     }
 
+
     @Override
     public void onPMessage(String pattern, String channel, String message) {
         String messageDecoded = new String(Base64.getDecoder().decode(message));
+
+        StringSerializer<?> stringSerializer = serializationManager.getStringSerializer(channel);
+        if(stringSerializer != null) {
+            Object deserialized = stringSerializer.deserialize(message);
+            hermes.getListenerHandler().handleParcel(channel, null, deserialized);
+        }
 
         logger.debug("Received parcel data");
         threadPool.submit(() -> {
@@ -49,18 +60,11 @@ public class HermesSubscriber extends JedisPubSub {
 
                     ParcelWrapper parcelWrapper = objectMapper.convertValue(jsonNode, ParcelWrapper.class);
                     try {
-                        hermes.getListenerHandler().handleParcel(channel, parcelWrapper);
+                        hermes.getListenerHandler().handleParcel(channel, parcelWrapper.getParcelId(), parcelWrapper.getData());
                     } catch (Exception e) {
                         e.printStackTrace();
                         logger.debug("Failed to handle parcel");
                         return;
-                    }
-                    List<Function<ParcelWrapper, ParcelResponse>> functions = hermes.getParcelConsumerMap().get(channel);
-                    if (functions == null) return;
-
-                    for (Function<ParcelWrapper, ParcelResponse> function : functions) {
-                        ParcelResponse parcelResponse = function.apply(parcelWrapper);
-                        hermes.sendResponse(channel, parcelWrapper.getParcelId(), parcelResponse);
                     }
                 } else if (type.contains("ParcelResponse")) {
                     ParcelResponse parcelResponse = objectMapper.convertValue(jsonNode, ParcelResponse.class);

@@ -36,15 +36,15 @@ public class ListenerHandler {
     }
 
     @SneakyThrows
-    public void handleParcel(String channel, ParcelWrapper wrapper) {
+    public void handleParcel(String channel, UUID parcelId, Object data) {
         HashSet<Method> methods = new HashSet<>(channelListeners.getOrDefault(channel, new ArrayList<>()));
         for (String s : channelListeners.keySet()) {
-            if(isMatch(channel, s)) {
+            if (isMatch(channel, s)) {
                 methods.addAll(channelListeners.get(s));
             }
         }
 
-        if(methods.isEmpty()) return;
+        if (methods.isEmpty()) return;
 
 
         for (Method method : new ArrayList<>(methods)) {
@@ -62,13 +62,13 @@ public class ListenerHandler {
                 response = invokeMethod(method, instance);
             } else if (method.getParameterTypes().length == 1) {
                 try {
-                    logger1.debug("data: " + wrapper);
+                    logger1.debug("data: " + data);
                     Class<?> classType = classLoader.loadClass(method.getParameterTypes()[0].getName());
 
                     if (hermes.getTypeAdapters().containsKey(channelListener.value())) {
-                        response = invokeMethod(method, instance, objectMapper.convertValue(wrapper.getData(), hermes.getTypeAdapters().get(channelListener.value())));
+                        response = invokeMethod(method, instance, objectMapper.convertValue(data, hermes.getTypeAdapters().get(channelListener.value())));
                     } else {
-                        response = invokeMethod(method, instance, objectMapper.convertValue(wrapper.getData(), classType));
+                        response = invokeMethod(method, instance, objectMapper.convertValue(data, classType));
                     }
 
                 } catch (Exception e) {
@@ -80,7 +80,7 @@ public class ListenerHandler {
                 return;
             }
 
-            if(response != null) hermes.sendResponse(channel, wrapper.getParcelId(), response);
+            if (parcelId != null && response != null) hermes.sendResponse(channel, parcelId, response);
         }
 
     }
