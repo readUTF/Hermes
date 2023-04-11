@@ -7,6 +7,7 @@ import com.github.readutf.hermes.wrapper.ParcelWrapper;
 import com.readutf.uls.Logger;
 import redis.clients.jedis.JedisPubSub;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -35,13 +36,13 @@ public class HermesSubscriber extends JedisPubSub {
 
     @Override
     public void onMessage(String channel, String message) {
+        String messageDecoded = new String(Base64.getDecoder().decode(message));
 
         logger.debug("Received parcel data");
         threadPool.submit(() -> {
             ObjectMapper objectMapper = hermes.getObjectMapper();
             try {
-                HashMap<String, Object> jsonNode = objectMapper.readValue(message, new TypeReference<HashMap<String, Object>>() {
-                });
+                HashMap<String, Object> jsonNode = objectMapper.readValue(messageDecoded, new TypeReference<HashMap<String, Object>>() {});
                 String type = (String) jsonNode.get("@class");
 
                 String subChannel = (String) jsonNode.get("subChannel");

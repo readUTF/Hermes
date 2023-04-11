@@ -13,10 +13,7 @@ import lombok.SneakyThrows;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -49,6 +46,7 @@ public class Hermes {
 
     String channel;
 
+    @SneakyThrows
     private Hermes(String channelName, LoggerFactory loggerFactory, JedisPool jedisPool, ObjectMapper objectMapper, ClassLoader classLoader) {
         instance = this;
         this.channel = channelName;
@@ -86,8 +84,14 @@ public class Hermes {
     @SneakyThrows
     public void sendParcel(String subChannel, Object object, Consumer<ParcelResponse> responseConsumer) {
         UUID parcelId = UUID.randomUUID();
-        publisher.publish(channel, objectMapper.writeValueAsString(new ParcelWrapper(subChannel, parcelId, object)));
-        if (responseConsumer != null) responseConsumerMap.put(parcelId, responseConsumer);
+        String message = objectMapper.writeValueAsString(new ParcelWrapper(subChannel, parcelId, object));
+        message = Base64.getEncoder().encodeToString(message.getBytes());
+        try {
+            publisher.publish(channel, message);
+            if (responseConsumer != null) responseConsumerMap.put(parcelId, responseConsumer);
+        } catch (Exception e) {
+            System.out.println("Error on send: " + e.getMessage());
+        }
 
 
     }
@@ -101,7 +105,7 @@ public class Hermes {
         try {
             parcelResponse.setChannel(channel);
             parcelResponse.setParcelId(parcelId);
-            publisher.publish(channel, objectMapper.writeValueAsString(parcelResponse));
+            publisher.publish(channel, Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(parcelResponse).getBytes()));
         } catch (Exception e) {
             e.printStackTrace();
         }

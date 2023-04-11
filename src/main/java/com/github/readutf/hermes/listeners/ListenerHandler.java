@@ -44,7 +44,7 @@ public class ListenerHandler {
             }
         }
 
-        if(methods == null || methods.isEmpty()) return;
+        if(methods.isEmpty()) return;
 
 
         for (Method method : new ArrayList<>(methods)) {
