@@ -40,42 +40,56 @@ public class HermesSubscriber extends JedisPubSub {
 
     @Override
     public void onPMessage(String pattern, String channel, String message) {
-        String messageDecoded = new String(Base64.getDecoder().decode(message));
+        Integer parcelDataType = Integer.parseInt(message.substring(0, 1));
 
-        StringSerializer<?> stringSerializer = serializationManager.getStringSerializer(channel);
-        if(stringSerializer != null) {
-            Object deserialized = stringSerializer.deserialize(message);
-            hermes.getListenerHandler().handleParcel(channel, null, deserialized);
-        }
-
-        logger.debug("Received parcel data");
-        threadPool.submit(() -> {
-            ObjectMapper objectMapper = hermes.getObjectMapper();
-            try {
-                HashMap<String, Object> jsonNode = objectMapper.readValue(messageDecoded, new TypeReference<HashMap<String, Object>>() {});
-                String type = (String) jsonNode.get("@class");
-
-                if (type.contains("ParcelWrapper")) {
-                    logger.debug("Processing ParcelWrapper");
-
-                    ParcelWrapper parcelWrapper = objectMapper.convertValue(jsonNode, ParcelWrapper.class);
-                    try {
-                        hermes.getListenerHandler().handleParcel(channel, parcelWrapper.getParcelId(), parcelWrapper.getData());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        logger.debug("Failed to handle parcel");
-                        return;
-                    }
-                } else if (type.contains("ParcelResponse")) {
-                    ParcelResponse parcelResponse = objectMapper.convertValue(jsonNode, ParcelResponse.class);
-                    Consumer<ParcelResponse> parcelResponseConsumer = hermes.getResponseConsumerMap().get(parcelResponse.getParcelId());
-                    if (parcelResponseConsumer == null) return;
-                    parcelResponseConsumer.accept(parcelResponse);
+        if (parcelDataType == 0) {
+            StringSerializer<?> stringSerializer = serializationManager.getStringSerializer(channel);
+            if (stringSerializer != null) {
+                Object deserialized = null;
+                try {
+                    deserialized = stringSerializer.deserialize(message.substring(1));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return;
                 }
-
-            } catch (Exception e) {
-                e.printStackTrace();
+                hermes.getListenerHandler().handleParcel(channel, null, deserialized);
             }
-        });
+        } else if (parcelDataType == 1) {
+            message = message.substring(1);
+
+
+            String messageDecoded = new String(Base64.getDecoder().decode(message));
+
+            logger.debug("Received parcel data");
+            threadPool.submit(() -> {
+                ObjectMapper objectMapper = hermes.getObjectMapper();
+                try {
+                    HashMap<String, Object> jsonNode = objectMapper.readValue(messageDecoded, new TypeReference<HashMap<String, Object>>() {
+                    });
+                    String type = (String) jsonNode.get("@class");
+
+                    if (type.contains("ParcelWrapper")) {
+                        logger.debug("Processing ParcelWrapper");
+
+                        ParcelWrapper parcelWrapper = objectMapper.convertValue(jsonNode, ParcelWrapper.class);
+                        try {
+                            hermes.getListenerHandler().handleParcel(channel, parcelWrapper.getParcelId(), parcelWrapper.getData());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            logger.debug("Failed to handle parcel");
+                            return;
+                        }
+                    } else if (type.contains("ParcelResponse")) {
+                        ParcelResponse parcelResponse = objectMapper.convertValue(jsonNode, ParcelResponse.class);
+                        Consumer<ParcelResponse> parcelResponseConsumer = hermes.getResponseConsumerMap().get(parcelResponse.getParcelId());
+                        if (parcelResponseConsumer == null) return;
+                        parcelResponseConsumer.accept(parcelResponse);
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
     }
 }

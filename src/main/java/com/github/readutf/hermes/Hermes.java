@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.readutf.hermes.listeners.ListenerHandler;
 import com.github.readutf.hermes.serialization.SerializationManager;
+import com.github.readutf.hermes.serialization.StringSerializer;
 import com.github.readutf.hermes.wrapper.ParcelResponse;
 import com.github.readutf.hermes.wrapper.ParcelWrapper;
 import com.readutf.uls.Logger;
@@ -71,16 +72,20 @@ public class Hermes {
     @SneakyThrows
     public void sendParcel(String channel, Object object, Consumer<ParcelResponse> responseConsumer) {
         UUID parcelId = UUID.randomUUID();
-        String message = objectMapper.writeValueAsString(new ParcelWrapper(channel, parcelId, object));
-        message = Base64.getEncoder().encodeToString(message.getBytes());
+
+        StringSerializer<Object> custom = (StringSerializer<Object>) serializationManager.getStringSerializer(channel);
+        String message;
+        if(custom != null) {
+            message = 0 + custom.serialize(object);
+        } else {
+            message = 1 + Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(new ParcelWrapper(channel, parcelId, object)).getBytes());
+        }
         try {
             publisher.publish(channel, message);
             if (responseConsumer != null) responseConsumerMap.put(parcelId, responseConsumer);
         } catch (Exception e) {
             System.out.println("Error on send: " + e.getMessage());
         }
-
-
     }
 
     @SneakyThrows
@@ -91,7 +96,7 @@ public class Hermes {
     public void sendResponse(String channel, UUID parcelId, ParcelResponse parcelResponse) {
         try {
             parcelResponse.setParcelId(parcelId);
-            publisher.publish(channel, Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(parcelResponse).getBytes()));
+            publisher.publish(channel, "1" + Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(parcelResponse).getBytes()));
         } catch (Exception e) {
             e.printStackTrace();
         }

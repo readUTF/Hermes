@@ -2,8 +2,8 @@ package com.github.readutf.hermes.serialization;
 
 public interface StringSerializer<T> {
 
-    String serialize(T object);
+    String serialize(T object) throws Exception;
 
-    T deserialize(String bytes);
+    T deserialize(String bytes) throws Exception;
 
 }
