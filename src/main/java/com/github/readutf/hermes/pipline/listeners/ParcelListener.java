@@ -1,13 +1,10 @@
-package com.github.readutf.hermes.listeners;
-
-import com.google.gson.TypeAdapter;
+package com.github.readutf.hermes.pipline.listeners;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 @Retention(RetentionPolicy.RUNTIME)
-
-public @interface ChannelListener {
+public @interface ParcelListener {
 
     String value();
 
