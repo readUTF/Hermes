@@ -5,6 +5,7 @@ import com.github.readutf.hermes.pipline.listeners.ParcelListenerManager;
 import com.github.readutf.hermes.wrapper.ParcelWrapper;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class ParcelConsumer {
 
@@ -30,7 +31,9 @@ public class ParcelConsumer {
     }
 
     public void consumeResponse(UUID parcelId, String responseData) {
-        hermes.getResponseHandler(parcelId).accept(new ParcelWrapper("response", responseData));
+        Consumer<ParcelWrapper> responseHandler = hermes.getResponseHandler(parcelId);
+        if(responseHandler == null) return;
+        responseHandler.accept(new ParcelWrapper("response", responseData));
     }
 
 
