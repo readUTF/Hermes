@@ -6,14 +6,16 @@ import com.github.readutf.hermes.pipline.listeners.ParcelListenerManager;
 import com.github.readutf.hermes.senders.ParcelSender;
 import com.github.readutf.hermes.serializer.StringSerializer;
 import com.github.readutf.hermes.subscribers.ParcelSubscriber;
+import com.github.readutf.hermes.wrapper.ParcelWrapper;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 
 public class Hermes {
@@ -24,41 +26,69 @@ public class Hermes {
     private final @Getter String prefix;
     private final Thread subscriberThread;
     private final ParcelConsumer parcelConsumer;
-    private final ParcelListenerManager parcelListenerManager;
+    private @Getter final ParcelListenerManager parcelListenerManager;
     private final ParcelSender parcelSender;
+
+    private final Map<UUID, Consumer<ParcelWrapper>> responseHandlers = new HashMap<>();
 
     private Hermes(String prefix, ParcelSubscriber parcelSubscriber, ParcelSender parcelSender) {
         logger.info("Hermes is starting up... (prefix: {})", prefix);
         this.prefix = prefix;
-        this.parcelListenerManager = new ParcelListenerManager();
-        this.parcelConsumer = new ParcelConsumer(parcelListenerManager);
+        this.parcelListenerManager = new ParcelListenerManager(this);
+        this.parcelConsumer = new ParcelConsumer(this);
         this.parcelSender = parcelSender;
-        subscriberThread = new Thread(() -> {
+        (subscriberThread = new Thread(() -> {
             parcelSubscriber.subscribe(this, parcelConsumer);
-        });
+        })).start();
+
     }
 
+    @SneakyThrows
     public <T> void sendParcel(String channel, T object, StringSerializer<T> serializer) {
+        sendParcel(channel, UUID.randomUUID(), serializer.serialize(object), null);
+    }
+
+    @SneakyThrows
+    public <T> void sendParcel(String channel, T object, StringSerializer<T> serializer, Consumer<ParcelWrapper> response) {
+        sendParcel(channel, serializer.serialize(object), response);
+    }
+
+    @SneakyThrows
+    public void sendParcel(String channel, Object object) {
+        sendParcel(channel, UUID.randomUUID(), objectMapper.writeValueAsString(object), null);
+    }
+
+    @SneakyThrows
+    public void sendParcel(String channel, Object object, Consumer<ParcelWrapper> response) {
+        sendParcel(channel, UUID.randomUUID(), objectMapper.writeValueAsString(object), response);
+    }
+
+    private void sendParcel(String channel, UUID parcelId, String data, Consumer<ParcelWrapper> responseHandler) {
         try {
-            String serialize = serializer.serialize(object);
-            parcelSender.send(channel, serialize);
+            parcelSender.send(prefix + "_" + channel, parcelId.toString() + ";" + data);
+            if(responseHandler != null) {
+                responseHandlers.put(parcelId, responseHandler);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void sendParcel(String channel, Object object) {
-        try {
-            parcelSender.send(channel, objectMapper.writeValueAsString(object));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public void addParcelListener(Object object) {
+        parcelListenerManager.registerListeners(object);
+    }
+
+    public Consumer<ParcelWrapper> getResponseHandler(UUID parcelId) {
+        return responseHandlers.get(parcelId);
+    }
+
+    @SneakyThrows
+    public void sendResponse(UUID parcelId, Object object) {
+        parcelSender.send(prefix + "_RESPONSE", parcelId + ";" + objectMapper.writeValueAsString(object));
     }
 
     public void connect() {
-        logger.info("Hermes is connecting... (prefix: {})", prefix);
 
-        subscriberThread.start();
     }
 
     public void disconnect() {

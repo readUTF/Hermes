@@ -23,9 +23,10 @@ public class ParcelWrapper {
         this.rawData = rawData;
     }
 
+    @SneakyThrows
     public <T> T get(@NonNull Class<T> clazz) {
         logger.debug("Converting {} to {}", rawData, clazz.getSimpleName());
-        return objectMapper.convertValue(rawData, clazz);
+        return objectMapper.readValue(rawData, clazz);
     }
 
     public <T> T get(@NonNull StringSerializer<T> serializer) throws Exception {

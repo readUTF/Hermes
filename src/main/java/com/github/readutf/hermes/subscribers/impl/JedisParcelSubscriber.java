@@ -6,12 +6,13 @@ import com.github.readutf.hermes.subscribers.ParcelSubscriber;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
 
+import java.util.UUID;
+
 public class JedisParcelSubscriber extends JedisPubSub implements ParcelSubscriber {
 
     private final JedisPool jedisPool;
     private Hermes hermes;
-    ParcelConsumer consumer;
-
+    private ParcelConsumer consumer;
 
     public JedisParcelSubscriber(JedisPool jedisPool) {
         this.jedisPool = jedisPool;
@@ -20,8 +21,8 @@ public class JedisParcelSubscriber extends JedisPubSub implements ParcelSubscrib
     @Override
     public void onPMessage(String pattern, String channel, String message) {
         if(hermes == null) throw new NullPointerException("Hermes is null");
-//        System.out.println(message);
-        consumer.consume(channel, message);
+
+        consumer.consumeParcel(channel, message);
     }
 
     @Override
