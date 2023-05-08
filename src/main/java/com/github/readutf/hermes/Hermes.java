@@ -132,4 +132,8 @@ public class Hermes {
         }
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
 }
