@@ -1,6 +1,7 @@
 package com.github.readutf.hermes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.readutf.hermes.inbuilt.PingCalculator;
 import com.github.readutf.hermes.pipline.ParcelConsumer;
 import com.github.readutf.hermes.pipline.listeners.ParcelListenerManager;
 import com.github.readutf.hermes.senders.ParcelSender;
@@ -27,6 +28,7 @@ public class Hermes {
     private final Thread subscriberThread;
     private final ParcelConsumer parcelConsumer;
     private @Getter final ParcelListenerManager parcelListenerManager;
+    private final PingCalculator pingCalculator;
     private final ParcelSender parcelSender;
 
     private final Map<UUID, Consumer<ParcelWrapper>> responseHandlers = new HashMap<>();
@@ -37,6 +39,7 @@ public class Hermes {
         this.parcelListenerManager = new ParcelListenerManager(this);
         this.parcelConsumer = new ParcelConsumer(this);
         this.parcelSender = parcelSender;
+        this.pingCalculator = new PingCalculator(this);
         (subscriberThread = new Thread(() -> {
             parcelSubscriber.subscribe(this, parcelConsumer);
         })).start();
@@ -76,6 +79,10 @@ public class Hermes {
 
     public void addParcelListener(Object object) {
         parcelListenerManager.registerListeners(object);
+    }
+
+    public long ping(boolean debug) {
+        return pingCalculator.calculatePing(debug);
     }
 
     public Consumer<ParcelWrapper> getResponseHandler(UUID parcelId) {
