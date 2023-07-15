@@ -54,10 +54,10 @@ public class ParcelListenerManager {
 
     private void registerObject(Object object) {
 
+        registeredClasses.add(object.getClass());
         LogUtil.log(String.format("Scanning %s for listeners", object.getClass().getSimpleName()));
 
-        registeredClasses.add(object.getClass());
-
+        List<String> registered = new ArrayList<>();
         Method[] methods = object.getClass().getMethods();
         for (Method method : methods) {
             if (!method.isAnnotationPresent(ParcelListener.class)) continue;
@@ -65,13 +65,12 @@ public class ParcelListenerManager {
 
             String channel = method.getAnnotation(ParcelListener.class).value();
             Map<Method, Object> handlers = channelToObjectMethods.getOrDefault(hermes.getPrefix() + "_" + channel, new HashMap<>());
-            System.out.format("current handlers:" + handlers);
             handlers.put(method, object);
-            System.out.format("after handlers:" + handlers);
             channelToObjectMethods.put(hermes.getPrefix() + "_" + channel, handlers);
-
-            LogUtil.log(" [+] " + method.getName() + " -> " + hermes.getPrefix() + "_" + channel);
+            registered.add(method.getName());
         }
+        LogUtil.log(String.format("Found %s listeners [%s]", registered.size(), String.join(", ", registered)));
+
     }
 
     public boolean isValidParameters(Class<?>[] args) {

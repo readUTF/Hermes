@@ -15,6 +15,9 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPool;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -30,6 +33,7 @@ public class Hermes {
     private @Getter final ParcelListenerManager parcelListenerManager;
     private final PingCalculator pingCalculator;
     private final ParcelSender parcelSender;
+    private final ExecutorService senderPool = Executors.newSingleThreadExecutor();
 
     private final Map<UUID, Consumer<ParcelWrapper>> responseHandlers = new HashMap<>();
 
@@ -68,13 +72,39 @@ public class Hermes {
 
     private void sendParcel(String channel, UUID parcelId, String data, Consumer<ParcelWrapper> responseHandler) {
         try {
-            parcelSender.send(prefix + "_" + channel, parcelId.toString() + ";" + data);
-            if(responseHandler != null) {
-                responseHandlers.put(parcelId, responseHandler);
-            }
+            senderPool.submit(() -> {
+                parcelSender.send(prefix + "_" + channel, parcelId.toString() + ";" + data);
+                if(responseHandler != null) {
+                    responseHandlers.put(parcelId, responseHandler);
+                }
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public <T> CompletableFuture<ParcelWrapper> sendParcelFuture(String channel, T object, StringSerializer<T> serializer) {
+        CompletableFuture<ParcelWrapper> future = new CompletableFuture<>();
+        sendParcel(channel, object, serializer, parcelWrapper -> {
+            try {
+                future.complete(parcelWrapper);
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
+        });
+        return future;
+    }
+
+    public <T> CompletableFuture<ParcelWrapper> sendParcelFuture(String channel, T object) {
+        CompletableFuture<ParcelWrapper> future = new CompletableFuture<>();
+        sendParcel(channel, object, parcelWrapper -> {
+            try {
+                future.complete(parcelWrapper);
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
+        });
+        return future;
     }
 
     public void addParcelListener(Object object) {
