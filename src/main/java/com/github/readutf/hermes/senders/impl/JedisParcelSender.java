@@ -16,8 +16,9 @@ public class JedisParcelSender implements ParcelSender {
     @Override
     public void send(String channel, String message) {
         Jedis resource = jedisPool.getResource();
-        LogUtil.log("Sending parcel to " + channel + " with message " + message);
+//        LogUtil.log("Sending parcel to " + channel + " with message " + message);
         resource.publish(channel, message);
+
         jedisPool.returnResource(resource);
     }
 }

@@ -6,13 +6,53 @@
 
     <groupId>com.github.readutf</groupId>
     <artifactId>Hermes</artifactId>
-    <version>2.1.1</version>
+    <version>2.2.0</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>brawltf-repo</id>
+            <name>brawltf-repo</name>
+            <url>https://nexus.real.rip/repository/Brawl-Repo/</url>
+        </repository>
+    </repositories>
+
+    <!-- just until we get deployment to central approved -->
+    <distributionManagement>
+        <repository>
+            <id>brawltf-prod</id>
+            <name>BrawlTF Production Releases</name>
+            <url>https://nexus.real.rip/repository/Brawl-Production/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <uniqueVersion>true</uniqueVersion>
+        </repository>
+        <snapshotRepository>
+            <id>brawltf-dev</id>
+            <name>BrawlTF Development Repository</name>
+            <url>https://nexus.real.rip/repository/Brawl-Development/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </snapshots>
+            <uniqueVersion>true</uniqueVersion>
+        </snapshotRepository>
+    </distributionManagement>
 
     <dependencies>
         <dependency>
@@ -21,15 +61,15 @@
             <version>4.4.1</version>
         </dependency>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.34</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
             <version>0.10.2</version>
-        </dependency>
-        <dependency>
-            <groupId>com.readutf</groupId>
-            <artifactId>ULS</artifactId>
-            <version>1.0.6</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

@@ -8,18 +8,17 @@ import com.github.readutf.hermes.senders.ParcelSender;
 import com.github.readutf.hermes.serializer.StringSerializer;
 import com.github.readutf.hermes.subscribers.ParcelSubscriber;
 import com.github.readutf.hermes.wrapper.ParcelWrapper;
+
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 
 public class Hermes {
